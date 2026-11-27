@@ -1,0 +1,39 @@
+name: Nightly Android Threat Feed ETL
+
+on:
+  schedule:
+    - cron: "0 1 * * *" # Daily 01:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish-delta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install cryptography
+        run: pip install cryptography
+
+      - name: Build and Ed25519-sign delta package
+        env:
+          SIGNING_PRIVATE_KEY_PEM: ${{ secrets.SIGNING_PRIVATE_KEY }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          DB_VERSION: ${{ github.run_number }}
+        run: python threat_feed_pipeline/build_delta.py
+
+      - name: Publish signed delta and manifest to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Threat Database v${{ github.run_number }}
+          make_latest: true
+          files: |
+            threat_feed_pipeline/out/manifest.json
+            threat_feed_pipeline/out/delta_v*.json.gz
