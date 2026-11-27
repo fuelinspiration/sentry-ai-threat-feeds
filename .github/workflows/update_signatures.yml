@@ -24,6 +24,7 @@ jobs:
       - name: Build and Ed25519-sign delta package
         env:
           SIGNING_PRIVATE_KEY_PEM: ${{ secrets.SIGNING_PRIVATE_KEY }}
+          ABUSECH_AUTH_KEY: ${{ secrets.ABUSECH_AUTH_KEY }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           DB_VERSION: ${{ github.run_number }}
         run: python threat_feed_pipeline/build_delta.py
